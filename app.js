@@ -1,9 +1,14 @@
 const express = require("express");
 const app = express();
 const bodyParser = require("body-parser")
-request = require("request")
-http = require("https")
+const mongoose = require('mongoose');
+mongoose.connect('mongodb://0.0.0.0:27017/db', { useNewUrlParser: true });
+mongoose.set('strictQuery', true);
+request = require("request");
+http = require("https");
+
 app.use(bodyParser.urlencoded({extended: true}));
+
 
 /*Getting webpages */
 app.use(express.static("assets"));
@@ -32,9 +37,45 @@ app.get('/delivery.html', function(req,res){res.sendFile(__dirname + "/delivery.
     
 });
 /* Getting webpages ends here */
-
+ 
+//Creating MongoDB collection (Users)
+const userSchema = new mongoose.Schema({
+    name: String,
+    email: String,
+    password: String  
+})
+const user = mongoose.model("user", userSchema)
 
 /* Post from webpages starts here */
+app.post('/register', function(req, res){
+    var namee = req.body.name;
+    var emaill = req.body.email ;
+    var passwordd = req.body.password; 
+    var confirmPassword = req.body.confirmpassword;
+   
+    
+    user.findOne({ 'email': emaill }, function (err, users) {
+        if (users === null) {const userReg = new user({name: namee, email: emaill, password:passwordd})
+        userReg.save(); 
+        res.sendFile(__dirname + "/registered.html")}
+
+        else {res.sendFile(__dirname + "/userexist.html")};
+    })});
+            
+           
+
+app.post('/login.html', function(req, res){
+    var emaill = req.body.email ;
+    var passwordd = req.body.password; 
+
+      
+    user.findOne({'password': passwordd, "email": emaill}, function (err, users) {
+        if (users === null) {res.sendFile(__dirname + "/failedlogin.html")}
+    
+        else {res.redirect("/index.html")};})})
+
+    
+
 app.post('/order', function(req, res){
     var namee = req.body.name;
     var emaill = req.body.email ;
@@ -49,19 +90,6 @@ app.post('/order', function(req, res){
     var jsonData = JSON.stringify(data);
 
 
-   /* Post to Blockchain server*/
-    const url = ""
-    const options= {method: "POST"}
-    const request = http.request(url, options, function(response){
-        response.on("data", function(data){
-            console.log(JSON.parse(data));
-        })
-
-    })
-    request.write(jsonData);
-    request.end;
-    /* Post to Blockchain server ends here */
-    
     res.sendFile(__dirname + "/orderRecieved.html"); 
 });
 
@@ -73,21 +101,7 @@ app.post('/cancelorder', function(req, res){
     var productId = req.body.productid;
     var transactionID = req.body.transactionid; 
     console.log(namee, emaill, productName, productId, phonee, transactionID);
-    // const data = {productname: productName, productid: productId};
-    // var jsonData = JSON.stringify(data);
-
-    // /* Post to Blockchain server*/
-    // const url = ""
-    // const options= {method: "POST"}
-    // const request = http.request(url, options, function(response){
-    //     response.on("data", function(data){
-    //         console.log(JSON.parse(data));
-    //     })
-
-    // })
-    // request.write(jsonData);
-    // request.end;
-    // /* Post to Blockchain server ends here */
+    
 
     res.sendFile(__dirname + "/cancelorderrecieved.html")
     
@@ -104,21 +118,8 @@ app.post('/delivery', function(req, res){
     var transactionID = req.body.transactionid; 
     console.log(namee, emaill, productName, productId, phonee, transactionID);
     
-    // /* Post to Blockchain server*/
-    // const data = {productname: productName, productid: productId};
-    // var jsonData = JSON.stringify(data);
-    // const url = ""
-    // const options= {method: "POST"}
-    // const request = http.request(url, options, function(response){
-    //     response.on("data", function(data){
-    //         console.log(JSON.parse(data));
-    //     })
+    res.sendFile(__dirname + "/deliveryConfirmed.html")});
 
-    res.sendFile(__dirname + "/deliveryConfirmed.html")})
-    // request.write(jsonData);
-    // request.end;
-    /* Post to Blockchain server ends here */
-    ;
 app.post('/contact', function(req, res){
     var namee = req.body.name;
     var emaill = req.body.email ;
